@@ -32,7 +32,8 @@ const elements = {
     progressFill: document.getElementById('progressFill'),
     copyTweetBtn: document.getElementById('copyTweetBtn'),
     postTweetBtn: document.getElementById('postTweetBtn'),
-    toastContainer: document.getElementById('toastContainer')
+    toastContainer: document.getElementById('toastContainer'),
+    exportCsvBtn: document.getElementById('exportCsvBtn')
 };
 
 // Constants for tweet parsing
@@ -105,6 +106,7 @@ function setupEventListeners() {
     elements.tweetContent.addEventListener('input', handleTweetInput);
     elements.copyTweetBtn.addEventListener('click', copyTweetText);
     elements.postTweetBtn.addEventListener('click', postTweetOnTwitter);
+    elements.exportCsvBtn.addEventListener('click', exportToCsv);
 }
 
 // Fetch Release Notes
@@ -284,12 +286,20 @@ function renderReleasesGrid() {
                         <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
                     </svg>
                 </a>
-                <button class="btn-tweet" data-id="${item.id}" title="Compose a Tweet about this release">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                    Tweet
-                </button>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button class="btn-action-sm btn-copy-card" data-id="${item.id}" title="Copy description to clipboard">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                    <button class="btn-tweet" data-id="${item.id}" title="Compose a Tweet about this release">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Tweet
+                    </button>
+                </div>
             </div>
         `;
         
@@ -297,6 +307,12 @@ function renderReleasesGrid() {
         const tweetBtn = card.querySelector('.btn-tweet');
         tweetBtn.addEventListener('click', () => {
             prepareAndOpenTweetModal(item);
+        });
+
+        // Add event listener to the Copy button
+        const copyBtn = card.querySelector('.btn-copy-card');
+        copyBtn.addEventListener('click', () => {
+            copyCardText(item);
         });
         
         elements.releasesGrid.appendChild(card);
@@ -435,4 +451,73 @@ function showToast(message, type = 'success') {
         toast.classList.remove('active');
         setTimeout(() => toast.remove(), 300);
     }, 3500);
+}
+
+// Copy Card Plaintext Details
+function copyCardText(item) {
+    const formattedText = `📢 BigQuery Update (${item.date})\n[${item.type.toUpperCase()}]: ${item.text}\n\nRead more: ${item.link}`;
+    navigator.clipboard.writeText(formattedText)
+        .then(() => {
+            showToast('Release details copied to clipboard!', 'success');
+        })
+        .catch(err => {
+            console.error('Failed to copy: ', err);
+            showToast('Failed to copy. Please select and copy manually.', 'error');
+        });
+}
+
+// Helper to escape values for CSV compatibility
+function escapeCsvValue(val) {
+    if (val === undefined || val === null) return '';
+    let stringValue = String(val);
+    stringValue = stringValue.replace(/"/g, '""');
+    if (/[",\n\r]/.test(stringValue)) {
+        stringValue = `"${stringValue}"`;
+    }
+    return stringValue;
+}
+
+// Export Filtered Releases to CSV
+function exportToCsv() {
+    if (state.filteredReleases.length === 0) {
+        showToast('No filtered items to export!', 'warning');
+        return;
+    }
+    
+    // Header Row
+    const headers = ['ID', 'Date', 'ISO Date', 'Type', 'Description', 'Link'];
+    const csvRows = [headers.join(',')];
+    
+    // Data Rows
+    state.filteredReleases.forEach(item => {
+        const row = [
+            escapeCsvValue(item.id),
+            escapeCsvValue(item.date),
+            escapeCsvValue(item.iso_date),
+            escapeCsvValue(item.type),
+            escapeCsvValue(item.text),
+            escapeCsvValue(item.link)
+        ];
+        csvRows.push(row.join(','));
+    });
+    
+    // Construct Blob and Trigger Download
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    
+    // Construct nice dynamic filename
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filterName = state.activeFilter.toUpperCase();
+    link.setAttribute('download', `bigquery_releases_${filterName}_${dateStr}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast(`Successfully exported ${state.filteredReleases.length} items to CSV!`, 'success');
 }

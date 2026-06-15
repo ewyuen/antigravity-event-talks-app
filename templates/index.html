@@ -121,8 +121,18 @@
                 <button class="filter-chip" data-filter="deprecation">Deprecations</button>
             </div>
             
-            <div class="results-meta">
-                Showing <span id="filteredCount">0</span> of <span id="totalCount">0</span> items
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button id="exportCsvBtn" class="filter-chip" style="display: flex; align-items: center; gap: 0.4rem; border-color: rgba(16, 185, 129, 0.3); color: var(--accent-color); background: var(--bg-card); cursor: pointer;" title="Export filtered list to CSV">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export CSV
+                </button>
+                <div class="results-meta">
+                    Showing <span id="filteredCount">0</span> of <span id="totalCount">0</span> items
+                </div>
             </div>
         </div>
 

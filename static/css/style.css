@@ -257,6 +257,37 @@ header {
     to { transform: rotate(360deg); }
 }
 
+.btn-action-sm {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+}
+
+.btn-action-sm:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+    transform: translateY(-1px);
+}
+
+.btn-action-sm:active {
+    transform: translateY(1px);
+}
+
+.btn-action-sm svg {
+    width: 14px;
+    height: 14px;
+}
+
+
 /* Statistics Grid */
 .stats-container {
     display: grid;
